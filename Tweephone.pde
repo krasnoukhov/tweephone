@@ -4,6 +4,8 @@ LiquidCrystalRus lcd(12, 11, 10, 5, 4, 3, 2);
 
 const unsigned int  diskState = 7;
 const unsigned int  diskCounter = 8;
+const unsigned int  diskSend = 9;
+
 const unsigned int  diskChangeInterval = 100;
 const unsigned long diskNumberInterval = 1500;
 const unsigned long diskInputInterval = 1000;
@@ -11,16 +13,17 @@ const unsigned long diskInputInterval = 1000;
 const String msgStart        = "Turn the dial   ";
 const String msgSend         = "Hang up to send ";
 const String msgError        = "Too long        ";
-const char*  keyCodes[][5] = {
+const String msgLoading      = "Loading...      ";
+const char*  keyCodes[][8] = {
   {".", ",", "!", "?", "@"},
-  {"a", "b", "c"},
-  {"d", "e", "f"},
-  {"g", "h", "i"},
-  {"j", "k", "l"},
-  {"m", "n", "o"},
-  {"p", "q", "r"},
-  {"t", "u", "v"},
-  {"w", "x", "y", "z"},
+  {"a", "b", "c", "A", "B", "C"},
+  {"d", "e", "f", "D", "E", "F"},
+  {"g", "h", "i", "G", "H", "I"},
+  {"j", "k", "l", "J", "K", "L"},
+  {"m", "n", "o", "M", "N", "O"},
+  {"p", "q", "r", "s", "P", "Q", "R", "S"},
+  {"t", "u", "v", "T", "U", "V"},
+  {"w", "x", "y", "z", "W", "X", "Y", "Z"},
   {" "}
 };
 
@@ -42,6 +45,7 @@ void setup() {
 
   pinMode(diskState, INPUT);
   pinMode(diskCounter, INPUT);
+  pinMode(diskSend, INPUT);
 
   Serial.begin(115200);
 }
@@ -49,10 +53,16 @@ void setup() {
 void loop() {
   unsigned int  currDiskState = digitalRead(diskState);
   unsigned int  currDiskCountState = digitalRead(diskCounter);
+  unsigned int  currDiskSendState = digitalRead(diskSend);
   unsigned long currMillis = millis();
 
+  // send is pressed
+  if(currDiskSendState == HIGH) {
+    if(msg.length() > 0) {
+      sendMsg();
+    }
   // disk is moving
-  if(currDiskState == HIGH) {
+  }else if(currDiskState == HIGH) {
     if(prevMillis == 0) {
       prevMillis = currMillis;
       inputMillis = 0;
@@ -69,21 +79,16 @@ void loop() {
     if(currDiskCount != 0 || prevDiskCount != 0) {
       // we got max msg
       if(msg.length() >= 140) {
-        currMsgState = 2;
         printMsg("", true, 0);
       }else{
-        String addMsg = "";
-        boolean newChar = true;
-        int curOffset = 1;
-        
         if(holdTime == 0) {
           holdTime = currMillis-prevMillis-diskChangeInterval*currDiskCount;
         }     
 
         // number
         if(holdTime > diskNumberInterval) {
-          addMsg = currDiskCount == 10 ? 0 : currDiskCount;
-          curOffset = 0;
+          // let's print number
+          printMsg(currDiskCount == 10 ? 0 : currDiskCount, true, 0);
 
           currDiskCount = 0;
           prevDiskCount = 0;
@@ -102,31 +107,29 @@ void loop() {
           if(currMillis-inputMillis >= diskInputInterval) {
             // backspace
             if(currDiskCount == 10 && currDiskTimes > 1) {
+              // remove two symbols
               msg = msg.substring(0, msg.length()-2);
               
-              addMsg = " ";
-              curOffset = 1;
-              newChar = true;
-
-              printMsg(addMsg, newChar, curOffset);
+              // print with space
+              printMsg(" ", true, 1);
               
+              // remove space
               msg = msg.substring(0, msg.length()-1);
-              addMsg = "";
-              curOffset = 0;
-              newChar = true;
 
-              // scroll 2 times right
+              // print without space
+              printMsg("", true, 0);
+
+              // scroll display right for deleted symbols
               if(msg.length() == 14) {
                 lcd.scrollDisplayRight();
               }else if(msg.length() >= 15) {
-                lcd.scrollDisplayRight();
-                lcd.scrollDisplayRight();
-                lcd.scrollDisplayRight();
+                for(int i = 0; i < 3; i++) {
+                  lcd.scrollDisplayRight();
+                }
               }
             }else{
-              addMsg = getLetter(currDiskCount, currDiskTimes);
-              curOffset = 0;
-              newChar = false;
+              // let's print letter
+              printMsg(getLetter(currDiskCount, currDiskTimes), false, 0);
             }
 
             inputMillis = 0;
@@ -144,9 +147,9 @@ void loop() {
               inputMillis = currMillis;
               prevMillis = 0;
 
-              addMsg = getLetter(currDiskCount, currDiskTimes);
-              newChar = currDiskTimes == 1 ? true : false;
-              curOffset = 1;
+              // let's print!
+              printMsg(getLetter(currDiskCount, currDiskTimes), currDiskTimes == 1 ? true : false, 1);
+
             // another number
             }else if(prevMillis != 0 && prevDiskCount != 0 && prevDiskCount != currDiskCount) {  
               currDiskTimes = 1;
@@ -154,26 +157,31 @@ void loop() {
               inputMillis = currMillis;              
               prevMillis = 0;
 
-              addMsg = getLetter(currDiskCount, currDiskTimes);
-              newChar = false;
-              curOffset = 0;
+              // let's print!
+              printMsg(getLetter(currDiskCount, currDiskTimes), false, 1);
+
             }
 
             prevDiskCount = currDiskCount;
             currDiskCount = 0;
           }
-        }
-        
-        if(addMsg != "" || msg != "") {
-          currMsgState = 1;
-        }else if(msg == "") {
-          currMsgState = 0;
-        }
-        
-        printMsg(addMsg, newChar, curOffset);
+        }        
       }
     }
   }
+}
+
+void sendMsg() {
+  lcd.clear();
+  lcd.noCursor();
+  lcd.setCursor(0, 0);
+  lcd.print(msgLoading);
+  
+  // there will be sending to twitter
+  delay(3000);
+  
+  msg = "";
+  printMsg("", false, 0);
 }
 
 void printMsg(String add, boolean newChar, int curOffset) {
@@ -183,7 +191,17 @@ void printMsg(String add, boolean newChar, int curOffset) {
     msg += add;
   }
 
+  // get cursor position
   int curPos = msg.length()-curOffset;
+
+  // get current state
+  if(msg.length() >= 140) {
+    currMsgState = 2;
+  }else if(msg.length() > 0) {
+    currMsgState = 1;
+  }else{
+    currMsgState = 0;
+  }
   
   lcd.setCursor((msg.length() > 15 ? msg.length()-15 : 0), 0);
   switch(currMsgState) {
