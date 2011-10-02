@@ -8,20 +8,20 @@ const unsigned int  diskChangeInterval = 100;
 const unsigned long diskNumberInterval = 1500;
 const unsigned long diskInputInterval = 1000;
 
-const String msgStart        = "Start type text:";
-const String msgSend         = "Send/cancel     ";
+const String msgStart        = "Turn the dial   ";
+const String msgSend         = "Hang up to send ";
 const String msgError        = "Too long        ";
-const char*  keyCodes[10][4] = {
-  {".", ",", "!", "?"},
-  {"a", "b", "c", ""},
-  {"d", "e", "f", ""},
-  {"g", "h", "i", ""},
-  {"j", "k", "l", ""},
-  {"m", "n", "o", ""},
-  {"p", "q", "r", "s"},
-  {"t", "u", "v", ""},
+const char*  keyCodes[][5] = {
+  {".", ",", "!", "?", "@"},
+  {"a", "b", "c"},
+  {"d", "e", "f"},
+  {"g", "h", "i"},
+  {"j", "k", "l"},
+  {"m", "n", "o"},
+  {"p", "q", "r"},
+  {"t", "u", "v"},
   {"w", "x", "y", "z"},
-  {" ", "", "", ""}
+  {" "}
 };
 
 unsigned int  currDiskCount = 0;
@@ -38,7 +38,7 @@ String msg = "";
 
 void setup() {
   lcd.begin(16, 2);  
-  printMsg("");
+  printMsg("", true, 0);
 
   pinMode(diskState, INPUT);
   pinMode(diskCounter, INPUT);
@@ -70,16 +70,20 @@ void loop() {
       // we got max msg
       if(msg.length() >= 140) {
         currMsgState = 2;
-        printMsg("");
+        printMsg("", true, 0);
       }else{
         String addMsg = "";
+        boolean newChar = true;
+        int curOffset = 1;
+        
         if(holdTime == 0) {
           holdTime = currMillis-prevMillis-diskChangeInterval*currDiskCount;
         }     
 
         // number
         if(holdTime > diskNumberInterval) {
-          addMsg = currDiskCount;
+          addMsg = currDiskCount == 10 ? 0 : currDiskCount;
+          curOffset = 0;
 
           currDiskCount = 0;
           prevDiskCount = 0;
@@ -96,15 +100,34 @@ void loop() {
           }
           
           if(currMillis-inputMillis >= diskInputInterval) {
-            unsigned int charsCount = 0;
-            for(int i = 0; i <= 3; i++) {
-              if(keyCodes[currDiskCount-1][i] != "") {
-                charsCount++;
-              }
-            }
+            // backspace
+            if(currDiskCount == 10 && currDiskTimes > 1) {
+              msg = msg.substring(0, msg.length()-2);
+              
+              addMsg = " ";
+              curOffset = 1;
+              newChar = true;
 
-            // get letter to print            
-            addMsg = keyCodes[currDiskCount-1][(currDiskTimes-1)%charsCount];
+              printMsg(addMsg, newChar, curOffset);
+              
+              msg = msg.substring(0, msg.length()-1);
+              addMsg = "";
+              curOffset = 0;
+              newChar = true;
+
+              // scroll 2 times right
+              if(msg.length() == 14) {
+                lcd.scrollDisplayRight();
+              }else if(msg.length() >= 15) {
+                lcd.scrollDisplayRight();
+                lcd.scrollDisplayRight();
+                lcd.scrollDisplayRight();
+              }
+            }else{
+              addMsg = getLetter(currDiskCount, currDiskTimes);
+              curOffset = 0;
+              newChar = false;
+            }
 
             inputMillis = 0;
             prevMillis = 0;
@@ -112,6 +135,7 @@ void loop() {
             saveDiskCount = 0;
             prevDiskCount = 0;
             currDiskTimes = 0;
+            holdTime = 0;
           }else{            
             // same number next time
             if(prevMillis != 0 && (prevDiskCount == 0 || prevDiskCount == currDiskCount)) {
@@ -120,12 +144,19 @@ void loop() {
               inputMillis = currMillis;
               prevMillis = 0;
 
+              addMsg = getLetter(currDiskCount, currDiskTimes);
+              newChar = currDiskTimes == 1 ? true : false;
+              curOffset = 1;
             // another number
             }else if(prevMillis != 0 && prevDiskCount != 0 && prevDiskCount != currDiskCount) {  
               currDiskTimes = 1;
 
               inputMillis = currMillis;              
               prevMillis = 0;
+
+              addMsg = getLetter(currDiskCount, currDiskTimes);
+              newChar = false;
+              curOffset = 0;
             }
 
             prevDiskCount = currDiskCount;
@@ -133,17 +164,26 @@ void loop() {
           }
         }
         
-        if(addMsg != "") {
+        if(addMsg != "" || msg != "") {
           currMsgState = 1;
+        }else if(msg == "") {
+          currMsgState = 0;
         }
-        printMsg(addMsg);
+        
+        printMsg(addMsg, newChar, curOffset);
       }
     }
   }
 }
 
-void printMsg(String add) {
-  msg += add;
+void printMsg(String add, boolean newChar, int curOffset) {
+  if(!newChar) {
+    msg[msg.length()-1] = add[0];
+  }else{
+    msg += add;
+  }
+
+  int curPos = msg.length()-curOffset;
   
   lcd.setCursor((msg.length() > 15 ? msg.length()-15 : 0), 0);
   switch(currMsgState) {
@@ -162,13 +202,27 @@ void printMsg(String add) {
   lcd.print(msg);
   
   // scroll display
-  if(msg.length() > 15 && add.length() > 0) {
+  if(newChar && msg.length() > 15 && add.length() > 0) {
     for(int i = 1; i <= add.length(); i++) {
       lcd.scrollDisplayLeft();
     }
   }
   
-  lcd.setCursor(msg.length(), 1);
-  lcd.cursor();
+  lcd.setCursor(curPos, 1);
+  lcd.cursor();  
+  lcd.blink();
+}
+
+String getLetter(int currDiskCount, int currDiskTimes) {
+  unsigned int charsCount = 0;
+  for(int i = 0; i <= 4; i++) {
+    if(keyCodes[currDiskCount-1][i]) {
+      charsCount++;
+    }
+  }
+  
+  // get letter to print            
+  String addMsg = keyCodes[currDiskCount-1][(currDiskTimes-1)%charsCount];
+  return addMsg;
 }
 
