@@ -21,19 +21,11 @@ end
 
 client = Twitter::Client.new
 
-line = "";
 while true do
-  getc = sp.getc
-  if getc
-    line += getc
-
-    if getc == "\n"
-      # post
-      puts line
-      client.update(line)
-      
-      line = ""
-    end
+  line = sp.gets
+  if line
+    puts line
+    client.update(line)
   end
 end
 
