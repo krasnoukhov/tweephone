@@ -47,7 +47,7 @@ void setup() {
   pinMode(diskCounter, INPUT);
   pinMode(diskSend, INPUT);
 
-  Serial.begin(115200);
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -178,7 +178,8 @@ void sendMsg() {
   lcd.print(msgLoading);
   
   // there will be sending to twitter
-  delay(3000);
+  Serial.println(msg);
+  delay(1000);
   
   msg = "";
   printMsg("", false, 0);
@@ -240,7 +241,7 @@ String getLetter(int currDiskCount, int currDiskTimes) {
   }
   
   // get letter to print            
-  String addMsg = keyCodes[currDiskCount-1][(currDiskTimes-1)%charsCount];
+  String addMsg = keyCodes[currDiskCount-1][(currDiskTimes-1)%(charsCount+1)];
   return addMsg;
 }
 
