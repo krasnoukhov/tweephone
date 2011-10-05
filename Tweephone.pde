@@ -24,7 +24,7 @@ const char*  keyCodes[][8] = {
   {"p", "q", "r", "s", "P", "Q", "R", "S"},
   {"t", "u", "v", "T", "U", "V"},
   {"w", "x", "y", "z", "W", "X", "Y", "Z"},
-  {" "}
+  {" ", " "}
 };
 
 unsigned int  currDiskCount = 0;
