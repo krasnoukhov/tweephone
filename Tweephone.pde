@@ -1,6 +1,6 @@
 #include <LiquidCrystal.h>
 #include <LiquidCrystalRus.h>
-LiquidCrystalRus lcd(12, 11, 10, 5, 4, 3, 2);
+LiquidCrystalRus lcd(12, 11, 5, 4, 3, 2);
 
 const unsigned int  diskState = 7;
 const unsigned int  diskCounter = 8;
@@ -62,12 +62,12 @@ void loop() {
       sendMsg();
     }
   // disk is moving
-  }else if(currDiskState == HIGH) {
+  }else if(currDiskState == HIGH) {    
     if(prevMillis == 0) {
       prevMillis = currMillis;
       inputMillis = 0;
     }
-    
+
     if(prevDiskCountState == HIGH && currDiskCountState == LOW) {
       currDiskCount++;
       delay(diskChangeInterval);
@@ -139,7 +139,7 @@ void loop() {
             prevDiskCount = 0;
             currDiskTimes = 0;
             holdTime = 0;
-          }else{            
+          }else{
             // same number next time
             if(prevMillis != 0 && (prevDiskCount == 0 || prevDiskCount == currDiskCount)) {
               currDiskTimes++;
@@ -151,19 +151,19 @@ void loop() {
               printMsg(getLetter(currDiskCount, currDiskTimes), currDiskTimes == 1 ? true : false, 1);
 
             // another number
-            }else if(prevMillis != 0 && prevDiskCount != 0 && prevDiskCount != currDiskCount) {  
+            }else if(prevMillis != 0 && prevDiskCount != 0 && prevDiskCount != currDiskCount) {
               currDiskTimes = 1;
 
-              inputMillis = currMillis;              
+              inputMillis = currMillis;
               prevMillis = 0;
 
               // let's print!
               printMsg(getLetter(currDiskCount, currDiskTimes), false, 1);
-
             }
 
             prevDiskCount = currDiskCount;
             currDiskCount = 0;
+            delay(100);
           }
         }        
       }
@@ -232,7 +232,7 @@ void printMsg(String add, boolean newChar, int curOffset) {
   lcd.blink();
 }
 
-String getLetter(int currDiskCount, int currDiskTimes) {
+String getLetter(int currDiskCount, int currDiskTimes) {  
   unsigned int charsCount = 0;
   for(int i = 0; i <= 8; i++) {
     if(keyCodes[currDiskCount-1][i]) {
