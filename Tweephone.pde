@@ -193,7 +193,10 @@ void sendMsg() {
   delay(1000);
   
   msg = "";
-  printMsg("", false, 0);
+  lcd.clear();
+  lcd.noCursor();
+  lcd.setCursor(0, 0);
+  lcd.print(msgOn);
 }
 
 void printMsg(String add, boolean newChar, int curOffset) {
