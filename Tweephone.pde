@@ -16,7 +16,7 @@ const String msgSend         = "Hang up to send ";
 const String msgError        = "Too long        ";
 const String msgLoading      = "Loading...      ";
 const char*  keyCodes[][9] = {
-  {".", ",", "!", "?", "@", ":", "/", "#", "`"},
+  {".", ",", "!", "?", "@", ":", "/", "#", "'"},
   {"a", "b", "c", "A", "B", "C"},
   {"d", "e", "f", "D", "E", "F"},
   {"g", "h", "i", "G", "H", "I"},
@@ -248,14 +248,15 @@ void printMsg(String add, boolean newChar, int curOffset) {
 
 String getLetter(int currDiskCount, int currDiskTimes) {  
   unsigned int charsCount = 0;
-  for(int i = 0; i <= 9; i++) {
+  for(int i = 0; i <= 8; i++) {
     if(keyCodes[currDiskCount-1][i]) {
       charsCount++;
     }
   }
   
-  // get letter to print            
-  String addMsg = keyCodes[currDiskCount-1][(currDiskTimes-1)%(charsCount+1)];
+  // get letter to print
+  Serial.println((currDiskTimes-1)%charsCount);
+  String addMsg = keyCodes[currDiskCount-1][(currDiskTimes-1)%charsCount];
   return addMsg;
 }
 
