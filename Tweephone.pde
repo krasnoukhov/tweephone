@@ -10,12 +10,13 @@ const unsigned int  diskChangeInterval = 100;
 const unsigned long diskNumberInterval = 1500;
 const unsigned long diskInputInterval = 1000;
 
+const String msgOn           = "Pick up to type ";
 const String msgStart        = "Turn the dial   ";
 const String msgSend         = "Hang up to send ";
 const String msgError        = "Too long        ";
 const String msgLoading      = "Loading...      ";
-const char*  keyCodes[][8] = {
-  {".", ",", "!", "?", "@", ":", "/", "#"},
+const char*  keyCodes[][9] = {
+  {".", ",", "!", "?", "@", ":", "/", "#", "`"},
   {"a", "b", "c", "A", "B", "C"},
   {"d", "e", "f", "D", "E", "F"},
   {"g", "h", "i", "G", "H", "I"},
@@ -33,6 +34,7 @@ unsigned int  saveDiskCount = 0;
 unsigned int  currDiskTimes = 0;
 unsigned int  currMsgState = 0;
 unsigned int  prevDiskCountState = HIGH;
+unsigned int  prevDiskSendState = LOW;
 unsigned long holdTime = 0;
 unsigned long prevMillis = 0;
 unsigned long inputMillis = 0;
@@ -57,10 +59,19 @@ void loop() {
   unsigned long currMillis = millis();
 
   // send is pressed
-  if(currDiskSendState == HIGH) {
+  if(currDiskSendState != prevDiskSendState) {
     if(msg.length() > 0) {
       sendMsg();
+    }else if(currDiskSendState == HIGH){
+      lcd.clear();
+      lcd.noCursor();
+      lcd.setCursor(0, 0);
+      lcd.print(msgOn);
+    }else{
+      printMsg("", true, 0);
     }
+    
+    prevDiskSendState = currDiskSendState;
   // disk is moving
   }else if(currDiskState == HIGH) {    
     if(prevMillis == 0) {
@@ -234,7 +245,7 @@ void printMsg(String add, boolean newChar, int curOffset) {
 
 String getLetter(int currDiskCount, int currDiskTimes) {  
   unsigned int charsCount = 0;
-  for(int i = 0; i <= 8; i++) {
+  for(int i = 0; i <= 9; i++) {
     if(keyCodes[currDiskCount-1][i]) {
       charsCount++;
     }
