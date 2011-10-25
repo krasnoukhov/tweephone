@@ -255,7 +255,6 @@ String getLetter(int currDiskCount, int currDiskTimes) {
   }
   
   // get letter to print
-  Serial.println((currDiskTimes-1)%charsCount);
   String addMsg = keyCodes[currDiskCount-1][(currDiskTimes-1)%charsCount];
   return addMsg;
 }
