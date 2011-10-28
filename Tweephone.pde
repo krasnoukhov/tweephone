@@ -15,8 +15,8 @@ const String msgStart        = "Turn the dial   ";
 const String msgSend         = "Hang up to send ";
 const String msgError        = "Too long        ";
 const String msgLoading      = "Loading...      ";
-const char*  keyCodes[][9] = {
-  {".", ",", "!", "?", "@", ":", "/", "#", "'"},
+const char*  keyCodes[][10] = {
+  {".", ",", "!", "?", "@", ":", "/", "#", "'", "☎"},
   {"a", "b", "c", "A", "B", "C"},
   {"d", "e", "f", "D", "E", "F"},
   {"g", "h", "i", "G", "H", "I"},
@@ -248,7 +248,7 @@ void printMsg(String add, boolean newChar, int curOffset) {
 
 String getLetter(int currDiskCount, int currDiskTimes) {  
   unsigned int charsCount = 0;
-  for(int i = 0; i <= 8; i++) {
+  for(int i = 0; i <= 9; i++) {
     if(keyCodes[currDiskCount-1][i]) {
       charsCount++;
     }
